@@ -9,7 +9,8 @@ namespace LibraryV2.Mapper;
 
 public class PostModelMapper : IPostModelMapper
 {
-    public async Task<Author> AuthorPostDtoToBook(AuthorPostDto authorPostDto, ModelStateDictionary modelState, IBookRepository bookRepository)
+    public async Task<Author> AuthorPostDtoToBook(AuthorPostDto authorPostDto, ModelStateDictionary modelState,
+                                                  IBookRepository bookRepository)
     {
         var author = new Author()
         {

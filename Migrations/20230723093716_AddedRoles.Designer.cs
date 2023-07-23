@@ -3,6 +3,7 @@ using System;
 using LibraryV2.DataContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LibraryV2.Migrations
 {
     [DbContext(typeof(LibraryDataContext))]
-    partial class LibraryDataContextModelSnapshot : ModelSnapshot
+    [Migration("20230723093716_AddedRoles")]
+    partial class AddedRoles
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "7.0.8");
@@ -104,50 +107,15 @@ namespace LibraryV2.Migrations
                         .IsRequired()
                         .HasColumnType("BLOB");
 
-                    b.Property<string>("RefreshToken")
-                        .HasColumnType("TEXT");
-
                     b.Property<int>("Role")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("RoleType")
                         .HasColumnType("INTEGER");
 
-                    b.Property<DateTime?>("TokenCreated")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime?>("TokenExpires")
-                        .HasColumnType("TEXT");
-
                     b.HasKey("Id");
 
                     b.ToTable("Readers");
-                });
-
-            modelBuilder.Entity("LibraryV2.Models.RefreshToken", b =>
-                {
-                    b.Property<byte[]>("Id")
-                        .HasColumnType("BLOB");
-
-                    b.Property<DateTime>("Created")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("Expires")
-                        .HasColumnType("TEXT");
-
-                    b.Property<byte[]>("ReaderId")
-                        .IsRequired()
-                        .HasColumnType("BLOB");
-
-                    b.Property<string>("Token")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ReaderId");
-
-                    b.ToTable("RefreshTokens");
                 });
 
             modelBuilder.Entity("AuthorBook", b =>
@@ -178,17 +146,6 @@ namespace LibraryV2.Migrations
                     b.Navigation("CurrentReader");
 
                     b.Navigation("Edition");
-                });
-
-            modelBuilder.Entity("LibraryV2.Models.RefreshToken", b =>
-                {
-                    b.HasOne("LibraryV2.Models.Reader", "Reader")
-                        .WithMany()
-                        .HasForeignKey("ReaderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Reader");
                 });
 
             modelBuilder.Entity("LibraryV2.Models.BookEdition", b =>

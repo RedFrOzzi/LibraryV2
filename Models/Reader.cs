@@ -17,5 +17,22 @@ public class Reader
     public string Login { get; set; }
     [Required]
     public byte[] PasswordHash { get; set; }
+    [Required]
+    public virtual int RoleType { get; set; }
+    [EnumDataType(typeof(Roles))]
+    public Roles Role
+    {
+        get
+        {
+            return (Roles)RoleType;
+        }
+        set
+        {
+            RoleType = (int)value;
+        }
+    }
+    public string? RefreshToken { get; set; }
+    public DateTime? TokenCreated { get; set; } = DateTime.Now;
+    public DateTime? TokenExpires { get; set; } = DateTime.Now;
     public ICollection<Book>? BorrowedBooks { get; set; } = new List<Book>();
 }

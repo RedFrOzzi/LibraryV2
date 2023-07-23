@@ -30,7 +30,9 @@ namespace LibraryV2.Utilities
         {
             List<Claim> claims = new()
             {
-                new Claim(ClaimTypes.Name, reader.Name)
+                new Claim(ClaimTypes.NameIdentifier, reader.Id.ToString()),
+                new Claim(ClaimTypes.Name, reader.Name),
+                new Claim(ClaimTypes.Role, reader.Role.ToString())
             };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
@@ -44,6 +46,40 @@ namespace LibraryV2.Utilities
                 );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+        public static RefreshToken GetRefreshToken(Reader reader)
+        {
+            var refreshToken = new RefreshToken()
+            {
+                Reader = reader,
+                Token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
+                Created = DateTime.UtcNow,
+                Expires = DateTime.UtcNow.AddDays(1)
+            };
+
+            return refreshToken;
+        }
+
+        public static RefreshToken UpdateRefreshToken(Reader reader, RefreshToken refreshToken)
+        {
+            refreshToken.Reader = reader;
+            refreshToken.Token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+            refreshToken.Created = DateTime.UtcNow;
+            refreshToken.Expires = DateTime.UtcNow.AddDays(1);
+
+            return refreshToken;
+        }
+
+        public static void SetCookieWithRefreshToken(RefreshToken refreshToken, HttpResponse response)
+        {
+            var cookieOptions = new CookieOptions()
+            {
+                HttpOnly = true,
+                Expires = refreshToken.Expires
+            };
+
+            response.Cookies.Append("refreshToken", refreshToken.Token, cookieOptions);
         }
     }
 }

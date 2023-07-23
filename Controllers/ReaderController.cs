@@ -1,10 +1,9 @@
-﻿using LibraryV2.Dto;
-using LibraryV2.Dto.PatchDto;
-using LibraryV2.Dto.PostDto;
+﻿using LibraryV2.Dto.PatchDto;
 using LibraryV2.Mapper;
 using LibraryV2.Models;
 using LibraryV2.Repository.Interfaces;
-using LibraryV2.Utilities;
+using LibraryV2.Survices.ReaderSurvice;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -17,24 +16,18 @@ public class ReaderController : ControllerBase
 {
     private readonly IReaderRepository _readerRepository;
     private readonly IBookRepository _bookRepository;
-    private readonly IPostModelMapper _postModelMapper;
-    private readonly IConfiguration _configuration;
     private readonly ReaderMapper _readerMapper = new();
 
     public ReaderController(IReaderRepository readerRepository,
-                            IBookRepository bookRepository,
-                            IPostModelMapper postModelMapper,
-                            IConfiguration configuration)
+                            IBookRepository bookRepository)
     {
         _readerRepository = readerRepository;
         _bookRepository = bookRepository;
-        _postModelMapper = postModelMapper;
-        _configuration = configuration;
     }
 
     //### GET ###
 
-    [HttpGet("Collection")]
+    [HttpGet("collection"), Authorize]
     public async Task<IActionResult> GetReaders()
     {
         var readers = await _readerRepository.GetReaders();
@@ -55,7 +48,7 @@ public class ReaderController : ControllerBase
         return Ok(bookDtos);
     }
 
-    [HttpGet("{id}")]
+    [HttpGet("collection/{id}")]
     public async Task<IActionResult> GetReader([FromRoute] string id)
     {
         if (!Ulid.TryParse(id, out Ulid ulid))
@@ -76,7 +69,7 @@ public class ReaderController : ControllerBase
         return Ok(bookDto);
     }
 
-    [HttpGet("Name/{name}")]
+    [HttpGet("name/{name}")]
     public async Task<IActionResult> GetReaderByName([FromRoute] string name)
     {
         if (string.IsNullOrWhiteSpace(name))
@@ -101,89 +94,6 @@ public class ReaderController : ControllerBase
         var bookDtos = _readerMapper.ReaderToReaderDto(readers);
 
         return Ok(bookDtos);
-    }
-
-    //### POST ####
-
-    [HttpPost]
-    public async Task<IActionResult> RegisterReader([FromBody] ReaderPostDto readerDto)
-    {
-        if (readerDto is null)
-        {
-            ModelState.AddModelError("Entity", "Should provide item for register");
-            return BadRequest(ModelState);
-        }
-
-        if (string.IsNullOrWhiteSpace(readerDto.Name))
-        {
-            ModelState.AddModelError("Entity", "Should provide name");
-            return BadRequest(ModelState);
-        }
-        
-        if (string.IsNullOrWhiteSpace(readerDto.Login))
-        {
-            ModelState.AddModelError("Entity", "Should provide login");
-            return BadRequest(ModelState);
-        }
-        
-        if (string.IsNullOrWhiteSpace(readerDto.Password))
-        {
-            ModelState.AddModelError("Entity", "Should provide password");
-            return BadRequest(ModelState);
-        }
-
-        var login = await _readerRepository.GetReader(readerDto.Login);
-
-        if (login is not null)
-        {
-            ModelState.AddModelError("Entity", "User with this login already exist");
-            return BadRequest(ModelState);
-        }
-
-        var reader = _postModelMapper.ReaderPostDtoToReader(readerDto, ModelState);
-
-        reader.PasswordHash = AuthUtility.CreatePasswordHash(readerDto.Password, _configuration.GetValue<string>("PasswordSalt")!);
-
-        if (!await _readerRepository.CreateReader(reader))
-        {
-            return StatusCode(500);
-        }
-
-        return Ok();
-    }
-
-    [HttpPost("login")]
-    public async Task<IActionResult> LoginReader([FromBody] ReaderPostDto readerDto)
-    {
-        if (readerDto == null)
-        {
-            ModelState.AddModelError("Entity", "Should provide item for register");
-            return BadRequest(ModelState);
-        }
-
-        if (string.IsNullOrWhiteSpace(readerDto.Login))
-        {
-            ModelState.AddModelError("Entity", "Should provide login");
-            return BadRequest(ModelState);
-        }
-
-        if (string.IsNullOrWhiteSpace(readerDto.Password))
-        {
-            ModelState.AddModelError("Entity", "Should provide password");
-            return BadRequest(ModelState);
-        }
-
-        var reader = await _readerRepository.GetReader(readerDto.Login);
-
-        if (!AuthUtility.VerifyPasswordHash(readerDto.Password, reader.PasswordHash, _configuration.GetValue<string>("PasswordSalt")!))
-        {
-            ModelState.AddModelError("Auth", "Wrong login or password");
-            return BadRequest(ModelState);
-        }
-
-        var jwtToken = AuthUtility.CreateToken(reader, _configuration.GetValue<string>("JWTKey")!);
-
-        return Ok(jwtToken);
     }
 
     //### PUT ###
@@ -225,7 +135,7 @@ public class ReaderController : ControllerBase
 
     //### PATCH ###
 
-    [HttpPatch("/AddBooks")]
+    [HttpPatch("add_books")]
     public async Task<IActionResult> AddBorrowedBooks([FromBody] ReaderUpdateBooksDto readerUpdateBooksDto)
     {
         if (!Ulid.TryParse(readerUpdateBooksDto.Id, out Ulid ulid))
@@ -288,7 +198,7 @@ public class ReaderController : ControllerBase
             return Ok(ModelState);
     }
 
-    [HttpPatch("/RemoveBooks")]
+    [HttpPatch("remove_books")]
     public async Task<IActionResult> RemoveBorrowedBooks([FromBody] ReaderUpdateBooksDto readerUpdateBooksDto)
     {
         if (!Ulid.TryParse(readerUpdateBooksDto.Id, out Ulid ulid))

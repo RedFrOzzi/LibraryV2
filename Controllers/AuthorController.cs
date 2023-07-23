@@ -1,11 +1,8 @@
-﻿using LibraryV2.Dto;
-using LibraryV2.Dto.PatchDto;
+﻿using LibraryV2.Dto.PatchDto;
 using LibraryV2.Dto.PostDto;
 using LibraryV2.Mapper;
 using LibraryV2.Models;
-using LibraryV2.Repository.Implementations;
 using LibraryV2.Repository.Interfaces;
-using LibraryV2.Utilities;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LibraryV2.Controllers;
@@ -30,7 +27,7 @@ public class AuthorController : ControllerBase
 
     //### GET ###
 
-    [HttpGet("Collection")]
+    [HttpGet("collection")]
     public async Task<IActionResult> GetAuthors()
     {
         var authors = await _authorRepository.GetAuthors();
@@ -51,7 +48,7 @@ public class AuthorController : ControllerBase
         return Ok(authorDtos);
     }
 
-    [HttpGet("{id}")]
+    [HttpGet("collection/{id}")]
     public async Task<IActionResult> GetAuthor([FromRoute] string id)
     {
         if (!Ulid.TryParse(id, out Ulid ulid))
@@ -72,7 +69,7 @@ public class AuthorController : ControllerBase
         return Ok(authorDto);
     }
 
-    [HttpGet("Name/{name}")]
+    [HttpGet("name/{name}")]
     public async Task<IActionResult> GetAuthorByName([FromRoute] string name)
     {
         if (string.IsNullOrWhiteSpace(name))

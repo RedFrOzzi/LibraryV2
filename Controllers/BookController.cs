@@ -33,7 +33,7 @@ public class BookController : ControllerBase
 
     //### GET ###
 
-    [HttpGet("Collection")]
+    [HttpGet("collection")]
     public async Task<IActionResult> GetBooks()
     {
         var books = await _bookRepository.GetBooks();
@@ -54,7 +54,7 @@ public class BookController : ControllerBase
         return Ok(bookDtos);
     }
 
-    [HttpGet("{id}")]
+    [HttpGet("collection/{id}")]
     public async Task<IActionResult> GetBook([FromRoute] string id)
     {
         if (!Ulid.TryParse(id, out Ulid ulid))
@@ -75,7 +75,7 @@ public class BookController : ControllerBase
         return Ok(bookDto);
     }
 
-    [HttpGet("Title/{title}")]
+    [HttpGet("title/{title}")]
     public async Task<IActionResult> GetBookByTitle([FromRoute] string title)
     {
         if (string.IsNullOrWhiteSpace(title))

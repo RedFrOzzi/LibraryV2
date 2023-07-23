@@ -27,7 +27,7 @@ public class BookEditionController : ControllerBase
 
     //### GET ###
 
-    [HttpGet("Collection")]
+    [HttpGet("collection")]
     public async Task<IActionResult> GetEditions()
     {
         var editions = await _bookEditionRepository.GetBookEditions();
@@ -48,7 +48,7 @@ public class BookEditionController : ControllerBase
         return Ok(editionDtos);
     }
 
-    [HttpGet("{id}")]
+    [HttpGet("collection/{id}")]
     public async Task<IActionResult> GetEdition([FromRoute] string id)
     {
         if (!Ulid.TryParse(id, out Ulid ulid))
@@ -69,7 +69,7 @@ public class BookEditionController : ControllerBase
         return Ok(authorDto);
     }
 
-    [HttpGet("Name/{name}")]
+    [HttpGet("name/{name}")]
     public async Task<IActionResult> GetEditionsByName([FromRoute] string name)
     {
         if (string.IsNullOrWhiteSpace(name))
