@@ -18,6 +18,7 @@ public class LibraryDataContext : DbContext
         modelBuilder.Entity<BookEdition>().Property(x => x.Id).HasConversion<UlidToBytesConverter>();
         modelBuilder.Entity<Reader>().Property(x => x.Id).HasConversion<UlidToBytesConverter>();
         modelBuilder.Entity<RefreshToken>().Property(x => x.Id).HasConversion<UlidToBytesConverter>();
+        modelBuilder.Entity<BookCover>().Property(x => x.Id).HasConversion<UlidToBytesConverter>();
 
         base.OnModelCreating(modelBuilder);
     }
@@ -27,4 +28,5 @@ public class LibraryDataContext : DbContext
     public DbSet<BookEdition> BookEditions { get; set; }
     public DbSet<Reader> Readers { get; set; }
     public DbSet<RefreshToken> RefreshTokens { get; set; }
+    public DbSet<BookCover> BookCovers { get; set; }
 }

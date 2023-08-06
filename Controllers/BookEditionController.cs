@@ -113,7 +113,7 @@ public class BookEditionController : ControllerBase
             return BadRequest(ModelState);
         }
 
-        var edition = await _postModelMapper.BookEditionPostDtoToBook(editionDto, ModelState, _bookRepository);
+        var edition = await _postModelMapper.BookEditionPostDtoToBookEdition(editionDto, ModelState, _bookRepository);
 
         if (!await _bookEditionRepository.CreateBookEdition(edition))
         {

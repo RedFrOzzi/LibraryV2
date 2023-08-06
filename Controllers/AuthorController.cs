@@ -113,7 +113,7 @@ public class AuthorController : ControllerBase
             return BadRequest(ModelState);
         }
 
-        var author = await _postModelMapper.AuthorPostDtoToBook(authorDto, ModelState, _bookRepository);
+        var author = await _postModelMapper.AuthorPostDtoToAuthor(authorDto, ModelState, _bookRepository);
 
         if (!await _authorRepository.CreateAuthor(author))
         {

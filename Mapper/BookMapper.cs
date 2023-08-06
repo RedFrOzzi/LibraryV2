@@ -12,6 +12,6 @@ public partial class BookMapper
 {
     public partial BookDto BookToBookDto(Book book);
     public partial Book BookDtoToBook(BookDto bookDto);
-    public partial IReadOnlyList<BookDto> BookToBookDto(IReadOnlyList<Book> books);
-    public partial IReadOnlyList<Book> BookDtoToBook(IReadOnlyList<BookDto> bookDtos);
+    public partial IList<BookDto> BookToBookDto(IReadOnlyList<Book> books);
+    public partial IList<Book> BookDtoToBook(IReadOnlyList<BookDto> bookDtos);
 }

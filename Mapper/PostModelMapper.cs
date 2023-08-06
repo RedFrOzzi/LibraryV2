@@ -9,7 +9,7 @@ namespace LibraryV2.Mapper;
 
 public class PostModelMapper : IPostModelMapper
 {
-    public async Task<Author> AuthorPostDtoToBook(AuthorPostDto authorPostDto, ModelStateDictionary modelState,
+    public async Task<Author> AuthorPostDtoToAuthor(AuthorPostDto authorPostDto, ModelStateDictionary modelState,
                                                   IBookRepository bookRepository)
     {
         var author = new Author()
@@ -40,7 +40,7 @@ public class PostModelMapper : IPostModelMapper
         return author;
     }
 
-    public async Task<BookEdition> BookEditionPostDtoToBook(BookEditionPostDto bookEditionPostDto,
+    public async Task<BookEdition> BookEditionPostDtoToBookEdition(BookEditionPostDto bookEditionPostDto,
                                                       ModelStateDictionary modelState,
                                                       IBookRepository bookRepository)
     {
@@ -73,13 +73,15 @@ public class PostModelMapper : IPostModelMapper
     }
 
     public async Task<Book> BookPostDtoToBook(BookPostDto bookPostDto,
+                                              BookCover bookCover,
                                               ModelStateDictionary modelState,
                                               IBookEditionRepository bookEditionRepository,
                                               IAuthorRepository authorRepository)
     {
         var book = new Book()
         {
-            Title = bookPostDto.Title
+            Title = bookPostDto.Title,
+            BookCover = bookCover
         };
 
         if (bookPostDto.AuthorIds != null && bookPostDto.AuthorIds.Length > 0)

@@ -8,15 +8,16 @@ namespace LibraryV2.Mapper
     public interface IPostModelMapper
     {
         Task<Book> BookPostDtoToBook(BookPostDto bookPostDto,
+                                     BookCover bookCover,
                                      ModelStateDictionary modelState,
                                      IBookEditionRepository bookEditionRepository,
                                      IAuthorRepository authorRepository);
 
-        Task<BookEdition> BookEditionPostDtoToBook(BookEditionPostDto bookEditionPostDto,
+        Task<BookEdition> BookEditionPostDtoToBookEdition(BookEditionPostDto bookEditionPostDto,
                                                    ModelStateDictionary modelState,
                                                    IBookRepository bookRepository);
 
-        Task<Author> AuthorPostDtoToBook(AuthorPostDto authorPostDto,
+        Task<Author> AuthorPostDtoToAuthor(AuthorPostDto authorPostDto,
                                          ModelStateDictionary modelState,
                                          IBookRepository bookRepository);
 

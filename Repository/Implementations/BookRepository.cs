@@ -1,6 +1,7 @@
 ﻿using LibraryV2.DataContext;
 using LibraryV2.Models;
 using LibraryV2.Repository.Interfaces;
+using LibraryV2.Utilities;
 using Microsoft.EntityFrameworkCore;
 
 namespace LibraryV2.Repository.Implementations
@@ -26,15 +27,19 @@ namespace LibraryV2.Repository.Implementations
                 .Where(b => b.Id == id)
                 .Include(b => b.Authors)
                 .Include(b => b.Edition)
-                .FirstOrDefaultAsync()!;
+                .Include(b => b.BookCover)
+                .FirstOrDefaultAsync();
         }
 
-        public async Task<IReadOnlyList<Book>> GetBooks()
+        public async Task<PagedList<Book>> GetBooks(int page, int pageSize)
         {
-            return await _context.Books
+            var books = _context.Books
+                .OrderBy(b => b.Id)
                 .Include(b => b.Authors)
                 .Include(b => b.Edition)
-                .ToListAsync();
+                .Include(b => b.BookCover);
+
+            return await PagedList<Book>.CreateAsync(books, page, pageSize);
         }
 
         public async Task<IReadOnlyList<Book>> GetBooks(ICollection<Ulid> ids)

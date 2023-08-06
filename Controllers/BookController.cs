@@ -4,9 +4,8 @@ using LibraryV2.Dto.PostDto;
 using LibraryV2.Mapper;
 using LibraryV2.Models;
 using LibraryV2.Repository.Interfaces;
+using LibraryV2.Survices.BookSurvices;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Reflection.Metadata.Ecma335;
 
 namespace LibraryV2.Controllers;
 
@@ -18,25 +17,28 @@ public class BookController : ControllerBase
     private readonly IAuthorRepository _authorRepository;
     private readonly IBookEditionRepository _bookEditionRepository;
     private readonly IPostModelMapper _postModelMapper;
+    private readonly IImageManager _imageManager;
     private readonly BookMapper _bookMapper = new();
 
     public BookController(IBookRepository bookRepository,
                           IAuthorRepository authorRepository,
                           IBookEditionRepository bookEditionRepository,
-                          IPostModelMapper postModelMapper)
+                          IPostModelMapper postModelMapper,
+                          IImageManager imageManager)
     {
         _bookRepository = bookRepository;
         _authorRepository = authorRepository;
         _bookEditionRepository = bookEditionRepository;
         _postModelMapper = postModelMapper;
+        _imageManager = imageManager;
     }
 
     //### GET ###
 
-    [HttpGet("collection")]
-    public async Task<IActionResult> GetBooks()
+    [HttpGet("collection/{page:int}/{pageSize:int}")]
+    public async Task<IActionResult> GetBooks([FromRoute] int page, [FromRoute] int pageSize)
     {
-        var books = await _bookRepository.GetBooks();
+        var books = await _bookRepository.GetBooks(page, pageSize);
 
         if (books == null)
         {
@@ -44,17 +46,33 @@ public class BookController : ControllerBase
             return BadRequest(ModelState);
         }
 
-        if (books.Count == 0)
+        if (books.TotalCount == 0)
         {
             return NotFound();
         }
 
-        var bookDtos = _bookMapper.BookToBookDto(books);
+        var bookDtos = _bookMapper.BookToBookDto(books.Items);
+
+        for (int i = 0; i < bookDtos.Count; i++)
+        {
+            FileContentResult content = null;
+            try
+            {
+                var array = books.Items[i].BookCover?.ImageData;
+
+                content = File(array, "image/jpeg");
+            }
+            catch (Exception)
+            {
+                ModelState.AddModelError("Entity", $"Can not download image for book '{books.Items[i].Title}'");
+            }
+            bookDtos[i].Image = content;
+        }
 
         return Ok(bookDtos);
     }
 
-    [HttpGet("collection/{id}")]
+    [HttpGet("collection/book/{id}")]
     public async Task<IActionResult> GetBook([FromRoute] string id)
     {
         if (!Ulid.TryParse(id, out Ulid ulid))
@@ -71,6 +89,20 @@ public class BookController : ControllerBase
         }
 
         var bookDto = _bookMapper.BookToBookDto(book);
+
+
+        FileContentResult content = null;
+        try
+        {
+            var array = book.BookCover?.ImageData;
+
+            content = File(array, "image/jpeg");
+        }
+        catch (Exception)
+        {
+            ModelState.AddModelError("Entity", "Can not download image");
+        }
+        bookDto.Image = content;
 
         return Ok(bookDto);
     }
@@ -105,7 +137,7 @@ public class BookController : ControllerBase
     //### POST ####
 
     [HttpPost]
-    public async Task<IActionResult> CreateBook([FromBody] BookPostDto bookDto)
+    public async Task<IActionResult> CreateBook([FromForm] BookPostDto bookDto)
     {
         if (bookDto == null)
         {
@@ -119,7 +151,17 @@ public class BookController : ControllerBase
             return BadRequest(ModelState);
         }
 
-        var book = await _postModelMapper.BookPostDtoToBook(bookDto, ModelState, _bookEditionRepository, _authorRepository);
+        BookCover bookCover = null;
+        try
+        {
+            bookCover = await _imageManager.PostFileAsync(bookDto.BookCover);
+        }
+        catch (Exception)
+        {
+            ModelState.AddModelError("Entity", "Can not upload image");
+        }
+
+        var book = await _postModelMapper.BookPostDtoToBook(bookDto, bookCover, ModelState, _bookEditionRepository, _authorRepository);
 
         if (!await _bookRepository.CreateBook(book))
         {
