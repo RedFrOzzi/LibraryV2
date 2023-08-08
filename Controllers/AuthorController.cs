@@ -3,6 +3,7 @@ using LibraryV2.Dto.PostDto;
 using LibraryV2.Mapper;
 using LibraryV2.Models;
 using LibraryV2.Repository.Interfaces;
+using LibraryV2.Survices;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LibraryV2.Controllers;
@@ -13,12 +14,12 @@ public class AuthorController : ControllerBase
 {
     private readonly IAuthorRepository _authorRepository;
     private readonly IBookRepository _bookRepository;
-    private readonly IPostModelMapper _postModelMapper;
+    private readonly IModelMapperService _postModelMapper;
     private readonly AuthorMapper _authorMapper = new();
 
     public AuthorController(IAuthorRepository authorRepository,
                             IBookRepository bookRepository,
-                            IPostModelMapper postModelMapper)
+                            IModelMapperService postModelMapper)
     {
         _authorRepository = authorRepository;
         _bookRepository = bookRepository;

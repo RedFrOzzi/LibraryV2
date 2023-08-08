@@ -3,6 +3,7 @@ using LibraryV2.Dto.PostDto;
 using LibraryV2.Mapper;
 using LibraryV2.Models;
 using LibraryV2.Repository.Interfaces;
+using LibraryV2.Survices;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LibraryV2.Controllers;
@@ -13,12 +14,12 @@ public class BookEditionController : ControllerBase
 {
     private readonly IBookEditionRepository _bookEditionRepository;
     private readonly IBookRepository _bookRepository;
-    private readonly IPostModelMapper _postModelMapper;
+    private readonly IModelMapperService _postModelMapper;
     private readonly BookEditionMapper _bookEditionMapper = new();
 
     public BookEditionController(IBookEditionRepository bookEditionRepository,
                                  IBookRepository bookRepository,
-                                 IPostModelMapper postModelMapper)
+                                 IModelMapperService postModelMapper)
     {
         _bookEditionRepository = bookEditionRepository;
         _bookRepository = bookRepository;

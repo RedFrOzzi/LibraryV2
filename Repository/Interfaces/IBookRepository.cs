@@ -9,7 +9,7 @@ public interface IBookRepository
     Task<Book> GetBook(Ulid id);
     Task<PagedList<Book>> GetBooks(int page, int pageSize);
     Task<IReadOnlyList<Book>> GetBooks(ICollection<Ulid> ids);
-    Task<IReadOnlyList<Book>> GetBooksByTitle(string title);
+    Task<PagedList<Book>> GetBooksByTitle(string title, int page, int pageSize);
     Task<bool> UpdateBook(Book book);
     Task<bool> DeleteBook(Book book);
     Task<bool> Save();

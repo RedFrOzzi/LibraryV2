@@ -1,9 +1,9 @@
-﻿using LibraryV2.Dto;
-using LibraryV2.Dto.PatchDto;
+﻿using LibraryV2.Dto.PatchDto;
 using LibraryV2.Dto.PostDto;
 using LibraryV2.Mapper;
 using LibraryV2.Models;
 using LibraryV2.Repository.Interfaces;
+using LibraryV2.Survices;
 using LibraryV2.Survices.BookSurvices;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,26 +16,29 @@ public class BookController : ControllerBase
     private readonly IBookRepository _bookRepository;
     private readonly IAuthorRepository _authorRepository;
     private readonly IBookEditionRepository _bookEditionRepository;
-    private readonly IPostModelMapper _postModelMapper;
+    private readonly IModelMapperService _postModelMapper;
     private readonly IImageManager _imageManager;
+    private readonly IBookCoverRepository _bookCoverRepository;
     private readonly BookMapper _bookMapper = new();
 
     public BookController(IBookRepository bookRepository,
                           IAuthorRepository authorRepository,
                           IBookEditionRepository bookEditionRepository,
-                          IPostModelMapper postModelMapper,
-                          IImageManager imageManager)
+                          IModelMapperService postModelMapper,
+                          IImageManager imageManager,
+                          IBookCoverRepository bookCoverRepository)
     {
         _bookRepository = bookRepository;
         _authorRepository = authorRepository;
         _bookEditionRepository = bookEditionRepository;
         _postModelMapper = postModelMapper;
         _imageManager = imageManager;
+        _bookCoverRepository = bookCoverRepository;
     }
 
     //### GET ###
 
-    [HttpGet("collection/{page:int}/{pageSize:int}")]
+    [HttpGet("collection/{page:int}&{pageSize:int}")]
     public async Task<IActionResult> GetBooks([FromRoute] int page, [FromRoute] int pageSize)
     {
         var books = await _bookRepository.GetBooks(page, pageSize);
@@ -55,18 +58,16 @@ public class BookController : ControllerBase
 
         for (int i = 0; i < bookDtos.Count; i++)
         {
-            FileContentResult content = null;
+            byte[]? array = null;
             try
             {
-                var array = books.Items[i].BookCover?.ImageData;
-
-                content = File(array, "image/jpeg");
+                array = books.Items[i].BookCover?.ImageData;
             }
             catch (Exception)
             {
                 ModelState.AddModelError("Entity", $"Can not download image for book '{books.Items[i].Title}'");
             }
-            bookDtos[i].Image = content;
+            bookDtos[i].Image = array;
         }
 
         return Ok(bookDtos);
@@ -91,24 +92,22 @@ public class BookController : ControllerBase
         var bookDto = _bookMapper.BookToBookDto(book);
 
 
-        FileContentResult content = null;
+        byte[]? array = null;
         try
         {
-            var array = book.BookCover?.ImageData;
-
-            content = File(array, "image/jpeg");
+            array = book.BookCover?.ImageData;
         }
         catch (Exception)
         {
             ModelState.AddModelError("Entity", "Can not download image");
         }
-        bookDto.Image = content;
+        bookDto.Image = array;
 
         return Ok(bookDto);
     }
 
-    [HttpGet("title/{title}")]
-    public async Task<IActionResult> GetBookByTitle([FromRoute] string title)
+        [HttpGet("title/{title}/{page:int}&{pageSize:int}")]
+    public async Task<IActionResult> GetBookByTitle([FromRoute] string title, [FromRoute] int page, [FromRoute] int pageSize)
     {
         if (string.IsNullOrWhiteSpace(title))
         {
@@ -116,7 +115,7 @@ public class BookController : ControllerBase
             return BadRequest(ModelState);
         }
 
-        var books = await _bookRepository.GetBooksByTitle(title);
+        var books = await _bookRepository.GetBooksByTitle(title, page, pageSize);
 
         if (books == null)
         {
@@ -124,12 +123,26 @@ public class BookController : ControllerBase
             return BadRequest(ModelState);
         }
 
-        if (books.Count == 0)
+        if (books.TotalCount == 0)
         {
             return NotFound();
         }
 
-        var bookDtos = _bookMapper.BookToBookDto(books);
+        var bookDtos = _bookMapper.BookToBookDto(books.Items);
+
+        for (int i = 0; i < bookDtos.Count; i++)
+        {
+            byte[]? array = null;
+            try
+            {
+                array = books.Items[i].BookCover?.ImageData;
+            }
+            catch (Exception)
+            {
+                ModelState.AddModelError("Entity", $"Can not download image for book '{books.Items[i].Title}'");
+            }
+            bookDtos[i].Image = array;
+        }
 
         return Ok(bookDtos);
     }
@@ -151,17 +164,20 @@ public class BookController : ControllerBase
             return BadRequest(ModelState);
         }
 
-        BookCover bookCover = null;
+        var book = await _postModelMapper.BookPostDtoToBook(bookDto, ModelState, _bookEditionRepository, _authorRepository);
+
+        BookCover? bookCover;
         try
         {
-            bookCover = await _imageManager.PostFileAsync(bookDto.BookCover);
+            bookCover = (bookDto.BookCover is not null) ? await _imageManager.PostFileAsync(bookDto.BookCover, book) : null;
         }
         catch (Exception)
         {
             ModelState.AddModelError("Entity", "Can not upload image");
+            return BadRequest(ModelState);
         }
 
-        var book = await _postModelMapper.BookPostDtoToBook(bookDto, bookCover, ModelState, _bookEditionRepository, _authorRepository);
+        book.BookCover = bookCover;
 
         if (!await _bookRepository.CreateBook(book))
         {
@@ -174,15 +190,15 @@ public class BookController : ControllerBase
     //### PUT ###
 
     [HttpPut]
-    public async Task<IActionResult> UpdateBook([FromBody] BookPatchDto bookPatchDto)
+    public async Task<IActionResult> UpdateBook([FromForm] BookPatchDto bookDto)
     {
-        if (bookPatchDto == null)
+        if (bookDto == null)
         {
             ModelState.AddModelError("Entity", "Should provide item for update");
             return BadRequest(ModelState);
         }
 
-        if (!Ulid.TryParse(bookPatchDto.Id, out Ulid ulid))
+        if (!Ulid.TryParse(bookDto.Id, out Ulid ulid))
         {
             ModelState.AddModelError("ID", "Invalid id");
             return BadRequest(ModelState);
@@ -195,47 +211,11 @@ public class BookController : ControllerBase
             return NotFound(ModelState);
         }
 
-        if (bookPatchDto.Title != null)
-        {
-            book.Title = bookPatchDto.Title;
-        }
+        var mappedBook = await _postModelMapper.BookPatchDtoToBook(book, bookDto, ModelState, _imageManager,
+                                                                   _bookEditionRepository, _authorRepository,
+                                                                   _bookCoverRepository);
 
-        if (bookPatchDto.ReleaseDate != null && bookPatchDto.ReleaseDate != DateTime.MinValue)
-        {
-            book.ReleaseDate = bookPatchDto.ReleaseDate;
-        }
-
-        if (bookPatchDto.AuthorIds != null && bookPatchDto.AuthorIds.Length > 0)
-        {
-            List<Ulid> newAuthorIds = new();
-
-            for (int i = 0; i < bookPatchDto.AuthorIds!.Length; i++)
-            {
-                if (Ulid.TryParse(bookPatchDto.AuthorIds[i], out Ulid id))
-                    newAuthorIds.Add(id);
-                else
-                    ModelState.AddModelError("ID", $"Invalid author id {i}");
-            }
-
-            if (newAuthorIds.Count != 0)
-            {
-                book.Authors = await _authorRepository.GetAuthors(newAuthorIds) as List<Author>;
-            }
-        }
-        else
-            book.Authors = null;
-
-        if (bookPatchDto.EditionId != null)
-        {
-            if (Ulid.TryParse(bookPatchDto.EditionId, out Ulid id))
-                book.Edition = await _bookEditionRepository.GetBookEdition(id);
-            else
-                ModelState.AddModelError("ID", "Invalid book edition id");
-        }
-        else
-            book.Edition = null;
-
-        if (!await _bookRepository.UpdateBook(book))
+        if (!await _bookRepository.UpdateBook(mappedBook))
         { 
             return StatusCode(500);
         }
@@ -262,6 +242,14 @@ public class BookController : ControllerBase
         if (book == null)
         {
             return NotFound();
+        }
+
+        if (book.BookCover is not null)
+        {
+            if (!await _bookCoverRepository.DeleteBookCover(book.BookCover))
+            {
+                return StatusCode(500);
+            }
         }
 
         if (!await _bookRepository.DeleteBook(book))

@@ -6,5 +6,6 @@ public interface IBookCoverRepository
 {
     Task<BookCover> CreateBookCover(BookCover bookCover);
     Task<BookCover> GetBookCover(Ulid id);
+    Task<bool> DeleteBookCover(BookCover bookCover);
     Task<bool> Save();
 }

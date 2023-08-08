@@ -1,5 +1,4 @@
 using LibraryV2.DataContext;
-using LibraryV2.Mapper;
 using LibraryV2.Repository.Implementations;
 using LibraryV2.Repository.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -12,6 +11,7 @@ using Swashbuckle.AspNetCore.Filters;
 using LibraryV2.Survices.ReaderSurvice;
 using LibraryV2.Survices.BookSurvices;
 using Microsoft.AspNetCore.Http.Features;
+using LibraryV2.Survices;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -41,7 +41,7 @@ builder.Services.AddScoped<IReaderRepository, ReaderRepository>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 builder.Services.AddScoped<IBookCoverRepository, BookCoverRepository>();
 
-builder.Services.AddSingleton<IPostModelMapper, PostModelMapper>();
+builder.Services.AddSingleton<IModelMapperService, ModelMapperService>();
 
 builder.Services.Configure<FormOptions>(o =>
 {

@@ -24,8 +24,15 @@ public class BookCoverRepository : IBookCoverRepository
     public async Task<BookCover> GetBookCover(Ulid id)
     {
         return await _context.BookCovers
-            .Where(a => a.Id == id)
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(a => a.Id == id);
+    }
+
+    public async Task<bool> DeleteBookCover(BookCover bookCover)
+    {
+        if (bookCover != null)
+            _context.BookCovers.Remove(bookCover);
+
+        return await Save();
     }
 
     public async Task<bool> Save()

@@ -2,6 +2,7 @@
 using LibraryV2.Mapper;
 using LibraryV2.Models;
 using LibraryV2.Repository.Interfaces;
+using LibraryV2.Survices;
 using LibraryV2.Utilities;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,13 +13,13 @@ namespace LibraryV2.Controllers;
 public class AuthorizationController : ControllerBase
 {
     private readonly IReaderRepository _readerRepository;
-    private readonly IPostModelMapper _postModelMapper;
+    private readonly IModelMapperService _postModelMapper;
     private readonly IConfiguration _configuration;
     private readonly IRefreshTokenRepository _refreshTokenRepository;
     private readonly ReaderMapper _readerMapper = new();
 
     public AuthorizationController(IReaderRepository readerRepository,
-                                   IPostModelMapper postModelMapper,
+                                   IModelMapperService postModelMapper,
                                    IConfiguration configuration,
                                    IRefreshTokenRepository refreshTokenRepository)
     {
